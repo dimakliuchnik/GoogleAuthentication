@@ -58,6 +58,10 @@ namespace GoogleAuthentication.Models
         [Display(Name = "Password")]
         public string Password { get; set; }
 
+        [Required]
+        [Display(Name = "Google Code")]
+        public string TwoFactorCode { get; set; }
+
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
@@ -108,5 +112,10 @@ namespace GoogleAuthentication.Models
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; }
+    }
+
+    public class TwoFactorSecret
+    {
+        public string EncodedSecret { get; set; }
     }
 }

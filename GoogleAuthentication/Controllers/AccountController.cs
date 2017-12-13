@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
@@ -156,15 +158,16 @@ namespace GoogleAuthentication.Controllers
                 if (result.Succeeded)
                 {
                     await SignInManager.SignInAsync(user, isPersistent:false, rememberBrowser:false);
-                    
+
                     // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=320771
                     // Send an email with this link
                     // string code = await UserManager.GenerateEmailConfirmationTokenAsync(user.Id);
                     // var callbackUrl = Url.Action("ConfirmEmail", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);
                     // await UserManager.SendEmailAsync(user.Id, "Confirm your account", "Please confirm your account by clicking <a href=\"" + callbackUrl + "\">here</a>");
 
-                    return RedirectToAction("Index", "Home");
+                    return RedirectToAction("ShowTwoFactorSecret", "Account");
                 }
+            
                 AddErrors(result);
             }
 
@@ -172,9 +175,28 @@ namespace GoogleAuthentication.Controllers
             return View(model);
         }
 
-        //
-        // GET: /Account/ConfirmEmail
-        [AllowAnonymous]
+    [Authorize]
+    public ActionResult ShowTwoFactorSecret()
+    {
+   
+        byte[] buffer = new byte[9];
+
+        using (RandomNumberGenerator rng = RNGCryptoServiceProvider.Create())
+        {
+            rng.GetBytes(buffer);
+        }
+
+        // Generates a 10 character string of A-Z, a-z, 0-9
+        // Don't need to worry about any = padding from the
+        // Base64 encoding, since our input buffer is divisible by 3
+        var enc = new Base32Encoder().Encode(Encoding.ASCII.GetBytes(Convert.ToBase64String(buffer).Substring(0, 10).Replace('/', '0').Replace('+', '1')));
+
+        return View(new TwoFactorSecret { EncodedSecret = enc });
+    }
+
+    //
+    // GET: /Account/ConfirmEmail
+    [AllowAnonymous]
         public async Task<ActionResult> ConfirmEmail(string userId, string code)
         {
             if (userId == null || code == null)
